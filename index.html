@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>感知與偏好量表</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --ink: #1a1f3c;
+    --indigo: #2d3a8c;
+    --indigo-light: #4a5abf;
+    --indigo-pale: #eef0fa;
+    --cream: #f8f7f3;
+    --gold: #c9a84c;
+    --muted: #6b7280;
+    --border: #e2e4ef;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--indigo);
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .site-header .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--gold);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: white; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .site-header h1 {
+    color: white; font-size: 20px; font-weight: 500; letter-spacing: 0.05em;
+  }
+  .site-header span {
+    color: rgba(255,255,255,0.5); font-size: 13px; margin-left: auto;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-wrap {
+    background: var(--indigo);
+    padding: 0 40px 20px;
+  }
+  .progress-bar-bg {
+    height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px;
+  }
+  .progress-bar-fill {
+    height: 4px; background: var(--gold); border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+  .progress-label {
+    color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 6px; text-align: right;
+  }
+
+  /* ── MAIN ── */
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── INTRO ── */
+  #screen-intro {
+    text-align: center;
+    padding: 60px 0;
+  }
+  #screen-intro h2 {
+    font-size: 32px; font-weight: 700; color: var(--indigo); margin-bottom: 12px;
+  }
+  #screen-intro .tagline {
+    color: var(--muted); font-size: 15px; line-height: 1.7; margin-bottom: 36px;
+  }
+  .info-grid {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 40px;
+  }
+  .info-card {
+    background: white; border-radius: var(--radius); padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .info-card .num { font-size: 28px; font-weight: 700; color: var(--indigo); }
+  .info-card .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .name-input-wrap { max-width: 340px; margin: 0 auto 32px; }
+  .name-input-wrap label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; text-align: left; }
+  .name-input-wrap input {
+    width: 100%; padding: 12px 16px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-family: inherit; font-size: 15px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .name-input-wrap input:focus { border-color: var(--indigo-light); }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background: white; border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin-bottom: 20px;
+  }
+  .q-part-label {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold); font-weight: 700; margin-bottom: 8px;
+  }
+  .q-num { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option-btn {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    font-family: inherit; font-size: 15px; color: var(--ink);
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+    width: 100%;
+  }
+  .option-btn:hover { border-color: var(--indigo-light); background: var(--indigo-pale); }
+  .option-btn.selected {
+    border-color: var(--indigo);
+    background: var(--indigo-pale);
+    color: var(--indigo);
+    font-weight: 500;
+  }
+  .option-btn .key {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--indigo-pale); color: var(--indigo);
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .option-btn.selected .key { background: var(--indigo); color: white; }
+
+  /* ── NAV BUTTONS ── */
+  .nav-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 24px;
+  }
+  .btn-primary {
+    background: var(--indigo); color: white;
+    padding: 13px 28px; border-radius: 8px;
+    border: none; font-family: inherit; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--indigo-light); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost {
+    background: none; border: 1.5px solid var(--border);
+    color: var(--muted); padding: 12px 24px; border-radius: 8px;
+    font-family: inherit; font-size: 14px; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--muted); }
+
+  /* ── RESULT ── */
+  #screen-result { display: none; }
+  .result-header {
+    background: var(--indigo); border-radius: var(--radius);
+    padding: 32px; margin-bottom: 24px; color: white;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .result-header h2 { font-size: 22px; font-weight: 600; }
+  .result-header .meta { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+  .result-header .score-badge {
+    background: var(--gold); color: white;
+    border-radius: 8px; padding: 8px 16px;
+    font-size: 13px; font-weight: 700; text-align: center;
+  }
+
+  .result-section { margin-bottom: 32px; }
+  .result-section h3 {
+    font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--gold); font-weight: 700; margin-bottom: 16px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+
+  .score-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  }
+  .score-cell {
+    background: white; border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 10px; text-align: center;
+  }
+  .score-cell .trait-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .score-cell .trait-name { font-size: 11px; color: var(--muted); margin-bottom: 6px; min-height: 28px; line-height: 1.4; }
+  .score-cell .trait-val {
+    font-size: 24px; font-weight: 700; color: var(--indigo); line-height: 1;
+  }
+  .score-cell .bar-bg {
+    height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px;
+  }
+  .score-cell .bar-fill {
+    height: 4px; background: var(--indigo-light); border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  /* radar */
+  .radar-wrap {
+    background: white; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    display: flex; gap: 16px; align-items: flex-start;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .radar-wrap canvas { max-width: 100%; }
+
+  .legend-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink); margin-bottom: 6px;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  /* PDF btn */
+  .pdf-row { display: flex; justify-content: center; margin-top: 32px; gap: 12px; }
+  .btn-pdf {
+    background: var(--indigo); color: white;
+    padding: 14px 36px; border-radius: 8px;
+    border: none; font-family: inherit; font-size: 15px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+    transition: background 0.2s;
+  }
+  .btn-pdf:hover { background: var(--indigo-light); }
+  .btn-restart {
+    background: white; color: var(--muted);
+    padding: 14px 24px; border-radius: 8px;
+    border: 1.5px solid var(--border); font-family: inherit; font-size: 14px;
+    cursor: pointer; transition: border-color 0.2s;
+  }
+  .btn-restart:hover { border-color: var(--muted); }
+
+  @media (max-width: 600px) {
+    .site-header { padding: 20px; }
+    .container { padding: 24px 16px 60px; }
+    .info-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .score-grid { grid-template-columns: repeat(4,1fr); }
+    .radar-wrap { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <div class="logo-mark">感</div>
+  <h1>感知與偏好量表</h1>
+  <span id="header-info" style="display:none"></span>
+</div>
+<div class="progress-wrap" id="progress-wrap" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <div class="progress-label" id="progress-label">0 / 90</div>
+    <div id="timer-display" style="color:rgba(255,255,255,0.9);font-size:13px;font-weight:600;letter-spacing:0.05em;">⏱ 15:00</div>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<div class="container">
+
+  <!-- INTRO -->
+  <div id="screen-intro">
+    <h2>了解你的感知模式</h2>
+    <p class="tagline">
+      本量表分為兩個部份，共 90 組敘述。<br>
+      每組有兩個敘述，請選一個最能形容你或最能表達你感受的敘述。<br>
+      儘量做快一點，每題看完後立刻作答，不要思考太久。
+    </p>
+    <div class="info-grid">
+      <div class="info-card"><div class="num">90</div><div class="lbl">題目數量</div></div>
+      <div class="info-card"><div class="num">20</div><div class="lbl">測量維度</div></div>
+      <div class="info-card"><div class="num">15</div><div class="lbl">分鐘完成</div></div>
+
+    </div>
+    <div class="name-input-wrap">
+      <label>受測者姓名（將顯示於結果頁）</label>
+      <input type="text" id="name-input" placeholder="請輸入姓名" />
+    </div>
+    <button class="btn-primary" onclick="startQuiz()">開始測驗</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="screen-quiz" style="display:none">
+    <div class="q-card">
+      <div class="q-part-label" id="q-part"></div>
+      <div class="q-num" id="q-num"></div>
+      <div class="options" id="q-options"></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-ghost" id="btn-prev" onclick="goPrev()">← 上一題</button>
+      <button class="btn-primary" id="btn-next" onclick="goNext()">下一題 →</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="screen-result">
+    <div class="result-header" id="result-header">
+      <div>
+        <h2 id="result-name">結果報告</h2>
+        <div class="meta" id="result-date"></div>
+      </div>
+      <div class="score-badge">感知與偏好量表<br>個人結果</div>
+    </div>
+
+    <!-- Part 1 scores -->
+    <div class="result-section">
+      <h3>第一部份 — 行為感知特質（A–J）</h3>
+      <div class="score-grid" id="scores-upper"></div>
+    </div>
+
+    <!-- Part 2 scores -->
+    <div class="result-section">
+      <h3>第二部份 — 動機偏好特質（a–j）</h3>
+      <div class="score-grid" id="scores-lower"></div>
+    </div>
+
+    <!-- Radar -->
+    <div class="result-section">
+      <h3>雷達圖總覽</h3>
+      <div class="radar-wrap">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0;">
+          <canvas id="radar-canvas-upper" width="360" height="360"></canvas>
+          <div style="font-size:12px;color:#6b7280;">▲ 行為感知特質（A–J）</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0;">
+          <canvas id="radar-canvas-lower" width="360" height="360"></canvas>
+          <div style="font-size:12px;color:#6b7280;">▲ 動機偏好特質（a–j）</div>
+        </div>
+      </div>
+      <!-- Legend row -->
+      <div style="display:flex;gap:40px;flex-wrap:wrap;margin-top:20px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;">
+        <div id="legend-upper" style="flex:1;min-width:200px;"></div>
+        <div id="legend-lower" style="flex:1;min-width:200px;"></div>
+      </div>
+    </div>
+
+    <div class="pdf-row">
+      <button class="btn-pdf" onclick="downloadPDF()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        下載 PDF 結果
+      </button>
+      <button class="btn-restart" onclick="restartQuiz()">重新測驗</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const TRAIT_NAMES_UPPER = {
+  A:'投注性', B:'領導性', C:'冒險性', D:'迅速性', E:'活動性',
+  F:'社交性', G:'思考性', H:'細緻性', I:'條理性', J:'穩定性'
+};
+const TRAIT_NAMES_LOWER = {
+  a:'意志力', b:'成就需求', c:'統御需求', d:'表現慾', e:'合群性',
+  f:'親和需求', g:'喜新性', h:'批判性', i:'崇拜性', j:'受役性'
+};
+const MAX_UPPER = 9; // approximate max per trait (varies); use 9 for bar
+const MAX_LOWER = 9;
+
+// Questions: [part1_answer (0=first,1=second), trait1, part2_answer, trait2]
+// Each row = one pair; 45 pairs in Part1, 45 in Part2
+// Format: { a: text, ta: trait, b: text, tb: trait, ans: 0|1 }
+// ans = which option scores (0=A-option, 1=B-option)
+// Built from the Excel data (解題 sheet)
+
+const RAW = [
+  // Part 1 (q1–45): [ans_idx, traitA, ans_idx2, traitB] pairs from sheet
+  // Reading the scoring sheet: each row = one choice pair
+  // 1=scored, 0=not scored; we keep both options visible
+  {p:1,a:"我很努力工作",ta:"A",b:"我不情緒化",tb:"J",ans:0},
+  {p:1,a:"我是一個好的領導者",ta:"B",b:"我會把我的工作處理的很有條理",tb:"I",ans:1},
+  {p:1,a:"我常冒險",ta:"C",b:"處理事務時，我對每個細節都很注意",tb:"H",ans:1},
+  {p:1,a:"我常吃得很快",ta:"D",b:"我喜歡閱讀",tb:"G",ans:0},
+  {p:1,a:"我不喜歡與人相處",ta:"E",b:"我容易疲倦",tb:"F",ans:1},
+  {p:1,a:"我盡力而為",ta:"A",b:"我很有條理，東西都擺在適當的位置",tb:"I",ans:1},
+  {p:1,a:"我會想辦法叫人做我要他們做的事",ta:"B",b:"我不容易生氣",tb:"J",ans:0},
+  {p:1,a:"我常冒險",ta:"C",b:"我想得很多",tb:"G",ans:1},
+  {p:1,a:"我做事又快又穩",ta:"D",b:"我喜歡做細節的工作",tb:"H",ans:0},
+  {p:1,a:"我有充沛的精力玩樂或運動",ta:"E",b:"我的東西放的乾乾淨淨整整齊齊",tb:"I",ans:1},
+  {p:1,a:"我儘量多交朋友",ta:"F",b:"我找得到我收起的東西",tb:"I",ans:1},
+  {p:1,a:"我投入工作時，我常忽略了其他事情",ta:"A",b:"我是個好的領導者",tb:"B",ans:1},
+  {p:1,a:"我常覺得疲倦",ta:"C",b:"我做決定做的很慢",tb:"E",ans:0},
+  {p:1,a:"我做事做的很快",ta:"D",b:"我很少覺得生氣或悲傷",tb:"J",ans:0},
+  {p:1,a:"我交很多朋友",ta:"F",b:"我花很多時間思考",tb:"G",ans:1},
+  {p:1,a:"我喜歡做細節的工作",ta:"H",b:"我喜歡把工作組織起來",tb:"I",ans:1},
+  {p:1,a:"我總是盡力而為",ta:"A",b:"我很容易也很快就可以做決定",tb:"C",ans:1},
+  {p:1,a:"我做事匆匆忙忙",ta:"D",b:"我很有規律的做運動",tb:"E",ans:1},
+  {p:1,a:"我是當領導者那一類型的人",ta:"B",b:"我很容易交朋友",tb:"F",ans:0},
+  {p:1,a:"我會很早開始計劃",ta:"G",b:"我常常都很愉快",tb:"J",ans:0},
+  {p:1,a:"我喜歡做細節的工作",ta:"H",b:"我不容易生氣",tb:"J",ans:0},
+  {p:1,a:"我可以很快很容易就做出決定",ta:"C",b:"我的東西放的乾乾淨淨整整齊齊",tb:"I",ans:0},
+  {p:1,a:"我盡力而為",ta:"A",b:"我很友善",tb:"F",ans:1},
+  {p:1,a:"我說話時大家都在聽",ta:"B",b:"我不容易疲倦",tb:"E",ans:0},
+  {p:1,a:"我做決定做的很快",ta:"C",b:"我說話說的很快",tb:"D",ans:0},
+  {p:1,a:"我努力工作",ta:"A",b:"我想得很多且常做計劃",tb:"G",ans:0},
+  {p:1,a:"我精力充沛",ta:"E",b:"我花太多時間思考",tb:"G",ans:0},
+  {p:1,a:"我對人很誠摯",ta:"F",b:"我喜歡需要準確性的工作",tb:"H",ans:0},
+  {p:1,a:"我把東西放在適當的位置",ta:"I",b:"我總是很愉快",tb:"J",ans:0},
+  {p:1,a:"團體總是做到我要求的事",ta:"B",b:"我經常很匆忙",tb:"D",ans:1},
+  {p:1,a:"我總是想做得很完美",ta:"A",b:"人家說我從來不會累",tb:"E",ans:1},
+  {p:1,a:"我很容易生氣",ta:"C",b:"我做決定做的很慢",tb:"J",ans:0},
+  {p:1,a:"我喜歡做理論的工作",ta:"G",b:"我喜歡做細節的工作",tb:"H",ans:0},
+  {p:1,a:"別人認為我做事很快",ta:"D",b:"別人認為我的東西能弄得乾淨整齊",tb:"I",ans:1},
+  {p:1,a:"我不會交朋友",ta:"C",b:"我做決定做得很慢",tb:"F",ans:0},
+  {p:1,a:"我喜歡玩、運動",ta:"E",b:"我很愉快",tb:"J",ans:0},
+  {p:1,a:"我會使別人努力工作",ta:"B",b:"我願意承擔風險",tb:"C",ans:1},
+  {p:1,a:"我總是盡力而為",ta:"A",b:"我喜歡每個步驟都做得很仔細",tb:"H",ans:0},
+  {p:1,a:"我做事做很快",ta:"D",b:"我很容易結交朋友",tb:"F",ans:0},
+  {p:1,a:"我想得很多且常做計劃",ta:"G",b:"我把東西放在適當的位置",tb:"I",ans:1},
+  {p:1,a:"我跟人家處得很好",ta:"F",b:"我脾氣好",tb:"J",ans:0},
+  {p:1,a:"我領導團隊",ta:"B",b:"我對細節有興趣",tb:"H",ans:0},
+  {p:1,a:"我很努力做事",ta:"A",b:"我做事往往很快",tb:"D",ans:0},
+  {p:1,a:"我喜歡做必須四處跑的工作",ta:"E",b:"我喜歡做細心的工作",tb:"H",ans:0},
+  {p:1,a:"大家認為我是個好的領導者",ta:"B",b:"我花長時間仔細思考",tb:"G",ans:0},
+  // Part 2 (q46–90)
+  {p:2,a:"我喜歡人家告訴我做什麼",ta:"j",b:"我起頭的事必須把它做完",tb:"a",ans:1},
+  {p:2,a:"我喜歡取悅我仰慕的人",ta:"i",b:"我要做個成功的人",tb:"b",ans:1},
+  {p:2,a:"我喜歡受到公平待遇",ta:"h",b:"我喜歡告訴別人怎麼做",tb:"c",ans:0},
+  {p:2,a:"我喜歡做新鮮不同的事",ta:"g",b:"我喜歡談論我如何把事情做成功",tb:"d",ans:0},
+  {p:2,a:"我喜歡結交知己的朋友",ta:"f",b:"我喜歡跟一整個群體做朋友",tb:"e",ans:0},
+  {p:2,a:"我喜歡追隨我仰慕的人",ta:"i",b:"我做事總是有頭有尾",tb:"a",ans:0},
+  {p:2,a:"我喜歡很明確的指示",ta:"j",b:"我喜歡努力工作",tb:"b",ans:0},
+  {p:2,a:"我喜歡新衣服",ta:"g",b:"我喜歡為別人負責",tb:"c",ans:0},
+  {p:2,a:"我喜歡爭辯",ta:"h",b:"我喜歡人家注意我",tb:"d",ans:0},
+  {p:2,a:"我喜歡取悅我的主管",ta:"i",b:"我對成為團體中的一份子感到興趣",tb:"e",ans:1},
+  {p:2,a:"我喜歡我所欣賞的人給我建議",ta:"i",b:"我儘量親近他人",tb:"f",ans:0},
+  {p:2,a:"我喜歡做事做的比別人好",ta:"b",b:"我喜歡專注於一件事,直到做完為止",tb:"a",ans:1},
+  {p:2,a:"我喜歡跟團體合作無間",ta:"e",b:"我喜歡幫人做決定",tb:"c",ans:0},
+  {p:2,a:"我讓別人強烈影響我",ta:"j",b:"我喜歡得到很多注意",tb:"d",ans:0},
+  {p:2,a:"必要時我會很快改變主意",ta:"g",b:"我試著交很知己的朋友",tb:"f",ans:1},
+  {p:2,a:"我要我的老板喜歡我",ta:"i",b:"別人有了錯時我喜歡告訴他",tb:"h",ans:0},
+  {p:2,a:"我喜歡告訴團體該做什麼",ta:"c",b:"一件事情沒有完成前,我不會停止",tb:"a",ans:0},
+  {p:2,a:"我喜歡加入團體",ta:"e",b:"我喜歡被團體所注目",tb:"d",ans:0},
+  {p:2,a:"我試著交很知己的朋友",ta:"f",b:"我努力成為最好的",tb:"b",ans:1},
+  {p:2,a:"我喜歡人家告訴我,怎麼做一件工作",ta:"j",b:"我很容易覺得煩",tb:"g",ans:0},
+  {p:2,a:"做一項工作時,我喜歡有很詳細的指示",ta:"j",b:"別人使我不悅時,我喜歡讓他知道",tb:"h",ans:0},
+  {p:2,a:"我喜歡我所欣賞的人給我建議",ta:"i",b:"我喜歡管理別人",tb:"c",ans:0},
+  {p:2,a:"我喜歡別人對我很親密,很友善",ta:"f",b:"我總試著有頭有尾",tb:"a",ans:0},
+  {p:2,a:"我喜歡被人家邀請",ta:"e",b:"我喜歡事情做得比別人好",tb:"b",ans:1},
+  {p:2,a:"我喜歡做有趣的事",ta:"d",b:"我喜歡告訴別人要做什麼",tb:"c",ans:0},
+  {p:2,a:"我喜歡接觸新鮮的人與事",ta:"g",b:"我總想要有頭有尾",tb:"a",ans:0},
+  {p:2,a:"我喜歡嘗試新鮮的事物",ta:"g",b:"我比較喜歡與人一起工作,而不喜歡一個人獨自做",tb:"e",ans:1},
+  {p:2,a:"事情出了錯時,我有時會怪別人",ta:"h",b:"如果有人不喜歡我,我會很煩",tb:"f",ans:1},
+  {p:2,a:"我喜歡照別人的指示做事",ta:"j",b:"我喜歡取悅我的主管",tb:"i",ans:0},
+  {p:2,a:"我希望自己很風趣",ta:"d",b:"我要成為很成功的人",tb:"b",ans:1},
+  {p:2,a:"我要成為群體的一份子",ta:"e",b:"我同一個時侯不做兩件事",tb:"a",ans:0},
+  {p:2,a:"我希望別人來為團體做決定",ta:"j",b:"我喜歡為團體決定",tb:"c",ans:1},
+  {p:2,a:"我真正受到傷害時,我會反擊",ta:"h",b:"我喜歡做新鮮不同的事",tb:"g",ans:1},
+  {p:2,a:"我喜歡我所欣賞的人給我建議",ta:"i",b:"我喜歡受人注意",tb:"d",ans:0},
+  {p:2,a:"我喜歡結交親密知己的朋友",ta:"f",b:"我喜歡給人忠告",tb:"c",ans:1},
+  {p:2,a:"做一項工作時,我喜歡有很詳細的指示",ta:"j",b:"我喜歡跟人在一起",tb:"e",ans:0},
+  {p:2,a:"我喜歡告訴人怎麼做事",ta:"c",b:"我做事情總要儘力而為",tb:"b",ans:0},
+  {p:2,a:"我以我的好名聲為榮",ta:"h",b:"一件事情還沒解決時,我不會拋開",tb:"a",ans:1},
+  {p:2,a:"有人不喜歡我時,我會很擔憂",ta:"f",b:"我喜歡人家注意我",tb:"d",ans:0},
+  {p:2,a:"我喜歡取悅我的主管",ta:"i",b:"我喜歡嘗試新鮮不同的事",tb:"g",ans:1},
+  {p:2,a:"我喜歡照規則行事",ta:"j",b:"我喜歡別人很瞭解我",tb:"f",ans:1},
+  {p:2,a:"我往往喜歡為我所信仰的事物而奮戰",ta:"h",b:"我往往喜歡努力工作",tb:"b",ans:0},
+  {p:2,a:"我喜歡同時做很多事",ta:"d",b:"我做事總是有頭有尾",tb:"a",ans:1},
+  {p:2,a:"我有理時我會據理力爭",ta:"h",b:"我喜歡屬於一個團體",tb:"e",ans:0},
+  {p:2,a:"我喜歡實驗嘗試新鮮事物",ta:"g",b:"我喜歡把一件困難的事做得很好",tb:"b",ans:1},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────
+let currentQ = 0;
+let answers = new Array(90).fill(null);
+let userName = '';
+let currentScores = {};
+let timerInterval = null;
+let timeLeft = 15 * 60; // 15 minutes in seconds
+
+// ── QUIZ LOGIC ────────────────────────────────────────────────────────
+function startQuiz() {
+  userName = document.getElementById('name-input').value.trim() || '受測者';
+  document.getElementById('screen-intro').style.display = 'none';
+  document.getElementById('screen-quiz').style.display = 'block';
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('header-info').style.display = 'inline';
+  document.getElementById('header-info').textContent = userName;
+
+  // Start countdown timer
+  timeLeft = 15 * 60;
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    const m = Math.floor(timeLeft / 60);
+    const s = timeLeft % 60;
+    const display = document.getElementById('timer-display');
+    display.textContent = `⏱ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (timeLeft <= 60) display.style.color = '#f87171'; // red warning
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      alert('時間到！將自動交卷。');
+      showResult();
+    }
+  }, 1000);
+
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = RAW[currentQ];
+  const partLabel = q.p === 1 ? '第一部份' : '第二部份';
+  document.getElementById('q-part').textContent = partLabel;
+  document.getElementById('q-num').textContent = `第 ${currentQ + 1} 題，共 90 題`;
+
+  const opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+
+  ['a','b'].forEach((key, idx) => {
+    const text = key === 'a' ? q.a : q.b;
+    const btn = document.createElement('button');
+    btn.className = 'option-btn' + (answers[currentQ] === idx ? ' selected' : '');
+    btn.innerHTML = `<span class="key">${String.fromCharCode(65+idx)}</span>${text}`;
+    btn.onclick = () => selectAnswer(idx);
+    opts.appendChild(btn);
+  });
+
+  // prev/next
+  document.getElementById('btn-prev').style.visibility = currentQ === 0 ? 'hidden' : 'visible';
+  const isLast = currentQ === RAW.length - 1;
+  const nextBtn = document.getElementById('btn-next');
+  nextBtn.textContent = isLast ? '查看結果 →' : '下一題 →';
+
+  // progress
+  const pct = ((currentQ + 1) / 90 * 100).toFixed(0);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${currentQ + 1} / 90`;
+}
+
+function selectAnswer(idx) {
+  answers[currentQ] = idx;
+  renderQuestion();
+}
+
+function goPrev() {
+  if (currentQ > 0) { currentQ--; renderQuestion(); }
+}
+
+function goNext() {
+  if (answers[currentQ] === null) {
+    alert('請先選擇一個答案後再繼續。');
+    return;
+  }
+  if (currentQ < RAW.length - 1) {
+    currentQ++;
+    renderQuestion();
+  } else {
+    showResult();
+  }
+}
+
+// ── SCORING ───────────────────────────────────────────────────────────
+function calcScores() {
+  const scores = {};
+  [...'ABCDEFGHIJabcdefghij'].forEach(t => scores[t] = 0);
+
+  RAW.forEach((q, i) => {
+    const chosen = answers[i]; // 0=A option, 1=B option
+    if (chosen === null) return;
+    // Every answer scores the trait of whichever option was chosen
+    const trait = chosen === 0 ? q.ta : q.tb;
+    scores[trait] = (scores[trait] || 0) + 1;
+  });
+  return scores;
+}
+
+// ── RESULT ────────────────────────────────────────────────────────────
+function showResult() {
+  clearInterval(timerInterval);
+  document.getElementById('screen-quiz').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+  const result = document.getElementById('screen-result');
+  result.style.display = 'block';
+
+  const scores = calcScores();
+  currentScores = scores;
+  document.getElementById('result-name').textContent = userName + ' 的結果報告';
+  const now = new Date();
+  document.getElementById('result-date').textContent =
+    `測驗日期：${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}  ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  // Upper scores (A-J)
+  const upperGrid = document.getElementById('scores-upper');
+  upperGrid.innerHTML = '';
+  'ABCDEFGHIJ'.split('').forEach(t => {
+    const v = scores[t] || 0;
+    const max = 9;
+    upperGrid.innerHTML += `
+      <div class="score-cell">
+        <div class="trait-label">${t}</div>
+        <div class="trait-name">${TRAIT_NAMES_UPPER[t]}</div>
+        <div class="trait-val">${v}</div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100,v/max*100)}%"></div></div>
+      </div>`;
+  });
+
+  // Lower scores (a-j)
+  const lowerGrid = document.getElementById('scores-lower');
+  lowerGrid.innerHTML = '';
+  'abcdefghij'.split('').forEach(t => {
+    const v = scores[t] || 0;
+    const max = 9;
+    lowerGrid.innerHTML += `
+      <div class="score-cell">
+        <div class="trait-label">${t}</div>
+        <div class="trait-name">${TRAIT_NAMES_LOWER[t]}</div>
+        <div class="trait-val">${v}</div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100,v/max*100)}%"></div></div>
+      </div>`;
+  });
+
+  // Radar
+  drawRadar(scores);
+  result.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── RADAR ─────────────────────────────────────────────────────────────
+function drawRadar(scores) {
+  function drawSingleRadar(canvasId, traits, nameMap, color, alpha) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 36;
+    const n = traits.length;
+    const MAX = 9;
+    const vals = traits.map(t => (scores[t]||0)/MAX);
+
+    ctx.clearRect(0,0,W,H);
+
+    // grid rings
+    for (let ring = 1; ring <= 4; ring++) {
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        const angle = (i / n) * Math.PI * 2 - Math.PI/2;
+        const r = R * ring / 4;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(100,110,180,0.13)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // axes + labels
+    traits.forEach((t, i) => {
+      const angle = (i / n) * Math.PI * 2 - Math.PI/2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + R * Math.cos(angle), cy + R * Math.sin(angle));
+      ctx.strokeStyle = 'rgba(100,110,180,0.2)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      const lx = cx + (R+20) * Math.cos(angle);
+      const ly = cy + (R+20) * Math.sin(angle);
+      ctx.fillStyle = '#2d3a8c';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(t, lx, ly);
+    });
+
+    // value labels on axes (score numbers)
+    traits.forEach((t, i) => {
+      const v = scores[t] || 0;
+      const angle = (i / n) * Math.PI * 2 - Math.PI/2;
+      const r = R * v / MAX;
+      if (v === 0) return;
+      const lx = cx + (r + 10) * Math.cos(angle);
+      const ly = cy + (r + 10) * Math.sin(angle);
+      ctx.fillStyle = color;
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(v, lx, ly);
+    });
+
+    // fill polygon
+    ctx.beginPath();
+    vals.forEach((v, i) => {
+      const angle = (i / n) * Math.PI * 2 - Math.PI/2;
+      const r = R * v;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+    const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+    grad.addColorStop(0, color.replace('1)', `${alpha})`));
+    grad.addColorStop(1, color.replace('1)', `${alpha*0.2})`));
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // dots
+    vals.forEach((v, i) => {
+      const angle = (i / n) * Math.PI * 2 - Math.PI/2;
+      const r = R * v;
+      ctx.beginPath();
+      ctx.arc(cx + r*Math.cos(angle), cy + r*Math.sin(angle), 5, 0, Math.PI*2);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+  }
+
+  const traitsU = 'ABCDEFGHIJ'.split('');
+  const traitsL = 'abcdefghij'.split('');
+  drawSingleRadar('radar-canvas-upper', traitsU, TRAIT_NAMES_UPPER, 'rgba(45,58,140,1)', 0.28);
+  drawSingleRadar('radar-canvas-lower', traitsL, TRAIT_NAMES_LOWER, 'rgba(201,168,76,1)', 0.28);
+
+  // legend (two columns)
+  const lu = document.getElementById('legend-upper');
+  const ll = document.getElementById('legend-lower');
+  lu.innerHTML = '<div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-weight:700;">行為感知（A–J）</div>';
+  traitsU.forEach(t => {
+    lu.innerHTML += `<div class="legend-item"><span class="legend-dot" style="background:#2d3a8c"></span><span style="font-weight:600;min-width:18px">${t}</span> ${TRAIT_NAMES_UPPER[t]} <span style="margin-left:auto;font-weight:700;color:#2d3a8c">${scores[t]||0}</span></div>`;
+  });
+  ll.innerHTML = '<div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-weight:700;">動機偏好（a–j）</div>';
+  traitsL.forEach(t => {
+    ll.innerHTML += `<div class="legend-item"><span class="legend-dot" style="background:#c9a84c"></span><span style="font-weight:600;min-width:18px">${t}</span> ${TRAIT_NAMES_LOWER[t]} <span style="margin-left:auto;font-weight:700;color:#c9a84c">${scores[t]||0}</span></div>`;
+  });
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────
+async function downloadPDF() {
+  const btn = document.querySelector('.btn-pdf');
+  const origHTML = btn.innerHTML;
+  btn.textContent = '產生中…';
+  btn.disabled = true;
+
+  try {
+    const { jsPDF } = window.jspdf;
+
+    // Build a clean print-friendly clone in a hidden div
+    const printDiv = document.createElement('div');
+    printDiv.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#f8f7f3;font-family:sans-serif;padding:32px;box-sizing:border-box;';
+
+    const scores = currentScores;
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+
+    // Header block
+    printDiv.innerHTML = `
+      <div style="background:#2d3a8c;border-radius:10px;padding:24px 28px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div>
+          <div style="color:white;font-size:20px;font-weight:700;">${userName} 的結果報告</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:4px;">測驗日期：${dateStr}</div>
+        </div>
+        <div style="background:#c9a84c;color:white;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;text-align:center;">感知與偏好量表<br>個人結果</div>
+      </div>`;
+
+    // Score tables
+    function scoreTable(traits, nameMap, title, color) {
+      let html = `<div style="margin-bottom:18px;">
+        <div style="font-size:11px;color:${color};text-transform:uppercase;letter-spacing:.1em;font-weight:700;border-bottom:1px solid #e2e4ef;padding-bottom:6px;margin-bottom:12px;">${title}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">`;
+      traits.forEach(t => {
+        const v = scores[t] || 0;
+        const pct = Math.min(100, v/9*100);
+        html += `<div style="background:white;border:1px solid #e2e4ef;border-radius:8px;padding:10px;text-align:center;width:64px;">
+          <div style="font-size:10px;color:#6b7280;">${t}</div>
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px;">${nameMap[t]}</div>
+          <div style="font-size:22px;font-weight:700;color:#2d3a8c;">${v}</div>
+          <div style="height:3px;background:#e2e4ef;border-radius:2px;margin-top:6px;"><div style="height:3px;background:${color};border-radius:2px;width:${pct}%;"></div></div>
+        </div>`;
+      });
+      html += `</div></div>`;
+      return html;
+    }
+
+    printDiv.innerHTML += scoreTable('ABCDEFGHIJ'.split(''), TRAIT_NAMES_UPPER, '第一部份 — 行為感知特質（A–J）', '#2d3a8c');
+    printDiv.innerHTML += scoreTable('abcdefghij'.split(''), TRAIT_NAMES_LOWER, '第二部份 — 動機偏好特質（a–j）', '#c9a84c');
+
+    // Radar title
+    printDiv.innerHTML += `<div style="font-size:11px;color:#c9a84c;text-transform:uppercase;letter-spacing:.1em;font-weight:700;border-bottom:1px solid #e2e4ef;padding-bottom:6px;margin-bottom:16px;">雷達圖總覽</div>`;
+
+    // Radar canvases (copy from existing rendered canvases)
+    const radarRow = document.createElement('div');
+    radarRow.style.cssText = 'display:flex;gap:16px;justify-content:center;margin-bottom:16px;';
+
+    const c1 = document.getElementById('radar-canvas-upper');
+    const c2 = document.getElementById('radar-canvas-lower');
+    const img1 = document.createElement('div');
+    const img2 = document.createElement('div');
+
+    img1.innerHTML = `<div style="text-align:center"><img src="${c1.toDataURL()}" style="width:300px;height:300px;"><div style="font-size:11px;color:#6b7280;margin-top:4px;">行為感知特質（A–J）</div></div>`;
+    img2.innerHTML = `<div style="text-align:center"><img src="${c2.toDataURL()}" style="width:300px;height:300px;"><div style="font-size:11px;color:#6b7280;margin-top:4px;">動機偏好特質（a–j）</div></div>`;
+
+    radarRow.appendChild(img1);
+    radarRow.appendChild(img2);
+    printDiv.appendChild(radarRow);
+
+    // Legend table
+    let legHtml = `<div style="background:white;border:1px solid #e2e4ef;border-radius:8px;padding:16px 20px;display:flex;gap:32px;">`;
+    legHtml += `<div style="flex:1"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700;">行為感知（A–J）</div>`;
+    'ABCDEFGHIJ'.split('').forEach(t => {
+      legHtml += `<div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#2d3a8c;flex-shrink:0;display:inline-block;"></span><span style="font-weight:600;min-width:16px">${t}</span> ${TRAIT_NAMES_UPPER[t]} <span style="margin-left:auto;font-weight:700;color:#2d3a8c;">${scores[t]||0}</span></div>`;
+    });
+    legHtml += `</div><div style="flex:1"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700;">動機偏好（a–j）</div>`;
+    'abcdefghij'.split('').forEach(t => {
+      legHtml += `<div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#c9a84c;flex-shrink:0;display:inline-block;"></span><span style="font-weight:600;min-width:16px">${t}</span> ${TRAIT_NAMES_LOWER[t]} <span style="margin-left:auto;font-weight:700;color:#c9a84c;">${scores[t]||0}</span></div>`;
+    });
+    legHtml += `</div></div>`;
+    printDiv.innerHTML += legHtml;
+
+    document.body.appendChild(printDiv);
+
+    // Capture the clean print div
+    const canvas = await html2canvas(printDiv, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#f8f7f3',
+      logging: false,
+      width: 794,
+    });
+
+    document.body.removeChild(printDiv);
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const pW = 210, pH = 297, margin = 10;
+    const usableW = pW - margin*2;
+    const usableH = pH - margin*2;
+    const totalImgH = (canvas.height / canvas.width) * usableW;
+
+    if (totalImgH <= usableH) {
+      pdf.addImage(imgData, 'JPEG', margin, margin, usableW, totalImgH);
+    } else {
+      // slice into pages without cutting mid-element
+      const scale = canvas.width / usableW; // px per mm
+      const pageHeightPx = usableH * scale;
+      let offsetPx = 0;
+      while (offsetPx < canvas.height) {
+        const sliceHeightPx = Math.min(pageHeightPx, canvas.height - offsetPx);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceHeightPx;
+        const sctx = sliceCanvas.getContext('2d');
+        sctx.drawImage(canvas, 0, -offsetPx);
+        const sliceH = sliceHeightPx / scale;
+        pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, usableW, sliceH);
+        offsetPx += sliceHeightPx;
+        if (offsetPx < canvas.height) pdf.addPage();
+      }
+    }
+
+    const fname = `感知偏好量表_${userName}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.pdf`;
+    pdf.save(fname);
+  } catch(e) {
+    alert('PDF 產生失敗，請嘗試使用瀏覽器的「列印 → 另存PDF」功能。');
+    console.error(e);
+  }
+
+  btn.innerHTML = origHTML;
+  btn.disabled = false;
+}
+
+function restartQuiz() {
+  if (!confirm('確定要重新開始？目前的答案將會清除。')) return;
+  clearInterval(timerInterval);
+  timeLeft = 15 * 60;
+  document.getElementById('timer-display').textContent = '⏱ 15:00';
+  document.getElementById('timer-display').style.color = 'rgba(255,255,255,0.9)';
+  currentQ = 0;
+  answers = new Array(90).fill(null);
+  document.getElementById('screen-result').style.display = 'none';
+  document.getElementById('screen-intro').style.display = 'block';
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('header-info').style.display = 'none';
+  document.getElementById('name-input').value = '';
+  window.scrollTo(0,0);
+}
+
+
+
+</script>
+</body>
+</html>
