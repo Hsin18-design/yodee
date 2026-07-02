@@ -262,10 +262,7 @@
   <span id="header-info" style="display:none"></span>
 </div>
 <div class="progress-wrap" id="progress-wrap" style="display:none">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-    <div class="progress-label" id="progress-label">0 / 90</div>
-    <div id="timer-display" style="color:rgba(255,255,255,0.9);font-size:13px;font-weight:600;letter-spacing:0.05em;">⏱ 15:00</div>
-  </div>
+  <div class="progress-label" id="progress-label" style="margin-bottom:6px;">0 / 90</div>
   <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
 </div>
 
@@ -479,9 +476,6 @@ let currentQ = 0;
 let answers = new Array(90).fill(null);
 let userName = '';
 let currentScores = {};
-let timerInterval = null;
-let timeLeft = 15 * 60; // 15 minutes in seconds
-
 // ── QUIZ LOGIC ────────────────────────────────────────────────────────
 function startQuiz() {
   userName = document.getElementById('name-input').value.trim() || '受測者';
@@ -490,22 +484,6 @@ function startQuiz() {
   document.getElementById('progress-wrap').style.display = 'block';
   document.getElementById('header-info').style.display = 'inline';
   document.getElementById('header-info').textContent = userName;
-
-  // Start countdown timer
-  timeLeft = 15 * 60;
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    const m = Math.floor(timeLeft / 60);
-    const s = timeLeft % 60;
-    const display = document.getElementById('timer-display');
-    display.textContent = `⏱ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    if (timeLeft <= 60) display.style.color = '#f87171'; // red warning
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      alert('時間到！將自動交卷。');
-      showResult();
-    }
-  }, 1000);
 
   renderQuestion();
 }
@@ -579,7 +557,6 @@ function calcScores() {
 
 // ── RESULT ────────────────────────────────────────────────────────────
 function showResult() {
-  clearInterval(timerInterval);
   document.getElementById('screen-quiz').style.display = 'none';
   document.getElementById('progress-wrap').style.display = 'none';
   const result = document.getElementById('screen-result');
@@ -876,12 +853,9 @@ async function downloadPDF() {
   btn.disabled = false;
 }
 
-function restartQuiz() {
+
+
   if (!confirm('確定要重新開始？目前的答案將會清除。')) return;
-  clearInterval(timerInterval);
-  timeLeft = 15 * 60;
-  document.getElementById('timer-display').textContent = '⏱ 15:00';
-  document.getElementById('timer-display').style.color = 'rgba(255,255,255,0.9)';
   currentQ = 0;
   answers = new Array(90).fill(null);
   document.getElementById('screen-result').style.display = 'none';
